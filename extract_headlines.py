@@ -28,22 +28,32 @@ def main(args):
     """
     finished = False
     allOutput = []
+    # TODO: Record all topics you get from the json file
+    topicOutput = []
     # Get API_key
     api_key = open("api_key.txt", "r").read().strip()
-    print("API key extracted.")
+    print("API key extracted...")
     # Get json data from NYTimes dataset
     headers = {'Accept': 'application/json'}
     with requests.get('https://api.nytimes.com/svc/archive/v1/2019/1.json?api-key='+api_key, headers=headers) as file:
-        print("File extracted from URL.")
+        print("File extracted from URL...")
         data = file.json()
         try:
             # Only take the documents parts of the data
             articles = data["response"]["docs"]
             # Subsampling the dataset for inspection
             articles_sub = articles[:2]
-            #
             for article in articles_sub:
-                allOutput.append(article)
+                article_out = {}
+                article_out["headline"] = {}
+                article_out["headline"]["main"] = article["headline"]["main"]
+                article_out["headline"]["print_headline"] = article["headline"]["print_headline"]
+                article_out["headline"]["sub"] = article["headline"]["sub"]
+                article_out["keywords"] = article["keywords"]
+                article_out["pub_date"] = article["pub_date"]
+                article_out["news_desk"] = article["news_desk"]
+                article_out["section_name"] = article["section_name"]
+                allOutput.append(article_out)
 
             finished = True
         except KeyError:
@@ -54,7 +64,7 @@ def main(args):
         f_out = open(args.output, 'w')
         f_out.write(json.dumps(allOutput))
         f_out.close()
-        print("JSON file created.")
+        print("JSON file created...")
 
 
 if __name__ == "__main__":
@@ -64,5 +74,5 @@ if __name__ == "__main__":
     filename of your choice", required=True)
     args = parser.parse_args()
 
-    print("Headline Extraction Started.")
+    print("Headline Extraction Started...")
     main(args)
