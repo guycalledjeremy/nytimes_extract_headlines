@@ -43,3 +43,4 @@ api_key.txt
 # Intermediate Output files #
 ######################
 out.json
+topics.json
