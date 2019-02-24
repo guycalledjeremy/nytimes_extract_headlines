@@ -4,6 +4,7 @@
 import argparse
 import json
 import requests
+import random
 
 
 def preproc(headline):
@@ -35,29 +36,45 @@ def main(args):
     print("API key extracted...")
     # Get json data from NYTimes dataset
     headers = {'Accept': 'application/json'}
-    with requests.get('https://api.nytimes.com/svc/archive/v1/2019/1.json?api-key='+api_key, headers=headers) as file:
-        print("File extracted from URL...")
-        data = file.json()
-        try:
-            # Only take the documents parts of the data
-            articles = data["response"]["docs"]
-            # Subsampling the dataset for inspection
-            articles_sub = articles[:2]
-            for article in articles_sub:
-                article_out = {}
-                article_out["headline"] = {}
-                article_out["headline"]["main"] = article["headline"]["main"]
-                article_out["headline"]["print_headline"] = article["headline"]["print_headline"]
-                article_out["headline"]["sub"] = article["headline"]["sub"]
-                article_out["keywords"] = article["keywords"]
-                article_out["pub_date"] = article["pub_date"]
-                article_out["news_desk"] = article["news_desk"]
-                article_out["section_name"] = article["section_name"]
-                allOutput.append(article_out)
+    # Initiate list of months for random generation
+    months = [month for month in range(1, 13)]
+    # Get data from the randomly generate month of each year (1900-2000)
+    print("Begin file extraction from URL...")
+    # Use a smaller time slot for testing:
+    # for year in range(1900, 2001):
+    # TODO: try get around the api's request limit (which is around 40/min)
+    for year in range(1990, 2001):
+        random.shuffle(months)
+        for i in range(2):
+            with requests.get('https://api.nytimes.com/svc/archive/v1/'+str(year)+'/'+str(months[i])+'.json?api-key='+api_key, headers=headers) as file:
+                data = file.json()
+                try:
+                    # Only take the documents parts of the data
+                    articles = data["response"]["docs"]
+                    # Subsampling the dataset for inspection
+                    articles_sub = articles[:2]
+                    for article in articles_sub:
+                        article_out = {}
+                        article_out["headline"] = {}
+                        article_out["headline"]["main"] = article["headline"]["main"]
+                        # TODO: Notice not all years have the same json file structure.
+                        # Pending: What's our solution to these two sections?
+                        #try:
+                        #    article_out["headline"]["print_headline"] = article["headline"]["print_headline"]
+                        #    article_out["headline"]["sub"] = article["headline"]["sub"]
+                        #except KeyError:
+                        #    print('Older news having different format, /'+str(year)+'/'+str(months[i]))
+                        article_out["keywords"] = article["keywords"]
+                        article_out["pub_date"] = article["pub_date"]
+                        article_out["news_desk"] = article["news_desk"]
+                        article_out["section_name"] = article["section_name"]
+                        allOutput.append(article_out)
 
-            finished = True
-        except KeyError:
-            print("Error: File extraction error; \n" + str(data['fault']))
+                    finished = True
+                    print(str(year)+'/'+str(months[i])+" extracted")
+                except KeyError:
+                    print('Error: File extraction error, /'+str(year)+'/'+str(months[i])+'; \n' + str(data['fault']))
+    print("File extracted from URL...")
 
     if finished:
         # Create the new
