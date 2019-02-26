@@ -5,6 +5,11 @@ import argparse
 import json
 import requests
 import random
+import time
+import re
+import spacy
+
+nlp = spacy.load('en', disable=['parser', 'ner'])
 
 
 def preproc(headline):
@@ -14,9 +19,24 @@ def preproc(headline):
         headline : string, the body of a headline
 
     Returns:
-        modHeadline: string, the modified headline
+        finHeadline: string, the modified headline
     """
-    print("TODO, proproc")
+    modHeadline = headline
+
+    # Add a space around all punctuations, but avoid spliting abbreviation
+    modHeadline = re.sub(r'(\S)(![\w\.])', r'\1 \2', modHeadline)
+    modHeadline = re.sub(r'(![\w\.])(\S)', r'\1 \2', modHeadline)
+
+    # Clean up all double spaces
+    modHeadline = re.sub(r'\s+', r' ', modHeadline)
+
+    # Get POS-Tags
+    utt = nlp(modHeadline)
+    finHeadline = ''
+    for token in utt:
+        finHeadline = finHeadline + token.lemma_ + '/' + token.tag_ + ' '
+
+    return finHeadline
 
 
 def main(args):
@@ -41,13 +61,18 @@ def main(args):
     # Get data from the randomly generate month of each year (1900-2000)
     print("Begin file extraction from URL...")
     # Use a smaller time slot for testing:
+    # for year in range(1995, 2000):
     # for year in range(1900, 2001):
     # TODO: try get around the api's request limit (which is around 20/min)
-    for year in range(1995, 2000):
+    # Initiate for timeout
+    task_count = 0
+    for year in range(1900, 2001):
+        yearOutput = []
         random.shuffle(months)
         for i in range(2):
             with requests.get('https://api.nytimes.com/svc/archive/v1/'+str(year)+'/'+str(months[i])+'.json?api-key='+api_key, headers=headers) as file:
                 data = file.json()
+                task_count += 1
                 try:
                     # Only take the documents parts of the data
                     articles = data["response"]["docs"]
@@ -55,8 +80,7 @@ def main(args):
                     articles_sub = articles[:2]
                     for article in articles_sub:
                         article_out = {}
-                        article_out["headline"] = {}
-                        article_out["headline"]["main"] = article["headline"]["main"]
+                        article_out["headline"] = preproc(article["headline"]["main"])
                         # TODO: Notice not all years have the same json file structure.
                         # Pending: What's our solution to these two sections?
                         # try:
@@ -72,12 +96,19 @@ def main(args):
                         article_out["pub_date"] = article["pub_date"]
                         article_out["news_desk"] = article["news_desk"]
                         article_out["section_name"] = article["section_name"]
-                        allOutput.append(article_out)
+                        yearOutput.append(article_out)
 
                     finished = True
                     print(str(year)+'/'+str(months[i])+" extracted")
                 except KeyError:
                     print('Error: File extraction error, /'+str(year)+'/'+str(months[i])+'; \n' + str(data['fault']))
+
+            # Check for task count to do timeout to avoid request limit
+            if task_count == 10:
+                print("Avoid exceeding request limit, sleep for 50s ...")
+                time.sleep(50)
+                task_count = 0
+        allOutput.append(yearOutput)
     print("File extracted from URL...")
 
     if finished:
