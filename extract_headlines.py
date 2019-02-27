@@ -5,7 +5,7 @@ import argparse
 import json
 import requests
 import random
-import time
+# import time
 import re
 import spacy
 
@@ -65,20 +65,20 @@ def main(args):
     # for year in range(1900, 2001):
     # TODO: try get around the api's request limit (which is around 20/min)
     # Initiate for timeout
-    task_count = 0
+    # task_count = 0
     for year in range(1900, 2001):
         yearOutput = []
         random.shuffle(months)
         for i in range(2):
             with requests.get('https://api.nytimes.com/svc/archive/v1/'+str(year)+'/'+str(months[i])+'.json?api-key='+api_key, headers=headers) as file:
                 data = file.json()
-                task_count += 1
+                # task_count += 1
                 try:
                     # Only take the documents parts of the data
                     articles = data["response"]["docs"]
                     # Subsampling the dataset for inspection
-                    articles_sub = articles[:2]
-                    for article in articles_sub:
+                    # articles_sub = articles[:2]
+                    for article in articles:
                         article_out = {}
                         article_out["headline"] = preproc(article["headline"]["main"])
                         # TODO: Notice not all years have the same json file structure.
@@ -104,10 +104,10 @@ def main(args):
                     print('Error: File extraction error, /'+str(year)+'/'+str(months[i])+'; \n' + str(data['fault']))
 
             # Check for task count to do timeout to avoid request limit
-            if task_count == 10:
-                print("Avoid exceeding request limit, sleep for 50s ...")
-                time.sleep(50)
-                task_count = 0
+            # if task_count == 10:
+                # print("Avoid exceeding request limit, sleep for 50s ...")
+                # time.sleep(50)
+                # task_count = 0
         allOutput.append(yearOutput)
     print("File extracted from URL...")
 
