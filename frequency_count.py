@@ -9,7 +9,7 @@ import numpy as np
 
 experiment_list = ['click', 'google', 'tape', 'catfish', 'follow', 'cloud',
                    'footprint', 'profile', 'tweet', 'bug', 'cookie',  'server',
-                   'spam', 'apple/NNP']
+                   'spam', 'apple/NNP', 'uber', 'amazon/NNP']
 
 
 def freq_count(headline, array):
