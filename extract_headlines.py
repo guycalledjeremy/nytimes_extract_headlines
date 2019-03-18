@@ -4,8 +4,7 @@
 import argparse
 import json
 import requests
-import random
-# import time
+import time
 import re
 import spacy
 
@@ -34,7 +33,9 @@ def preproc(headline):
     utt = nlp(modHeadline)
     finHeadline = ''
     for token in utt:
-        finHeadline = finHeadline + token.lemma_ + '/' + token.tag_ + ' '
+        # If this word is not a stop word
+        if not nlp.vocab[token.text].is_stop:
+            finHeadline = finHeadline + token.lemma_ + '/' + token.tag_ + ' '
 
     return finHeadline
 
@@ -49,29 +50,39 @@ def main(args):
     """
     finished = False
     allOutput = []
-    # TODO: Record all topics you get from the json file
-    topicOutput = []
+    years_count_Output = []
+    # TODO
+    # Record all topics you get from the json file
+    # topicOutput = []
+    # TODO
     # Get API_key
     api_key = open("api_key.txt", "r").read().strip()
     print("API key extracted...")
     # Get json data from NYTimes dataset
     headers = {'Accept': 'application/json'}
     # Initiate list of months for random generation
-    months = [month for month in range(1, 13)]
+    # months = [month for month in range(1, 13)]
     # Get data from the randomly generate month of each year (1900-2000)
     print("Begin file extraction from URL...")
-    # Use a smaller time slot for testing:
-    # for year in range(1995, 2000):
-    # for year in range(1900, 2001):
-    # TODO: try get around the api's request limit (which is around 20/min)
+    task_count = 0
+    article_count = 0
+    tech_article_count = 0
+    # Load the topics from the input file
+    tech_topics = json.load(open(args.input))
     # Initiate for timeout
     # task_count = 0
-    for year in range(1900, 2001):
+    for year in range(1900, 2000):
         yearOutput = []
-        random.shuffle(months)
-        for i in range(2):
-            with requests.get('https://api.nytimes.com/svc/archive/v1/'+str(year)+'/'+str(months[i])+'.json?api-key='+api_key, headers=headers) as file:
+        year_article_count = 0
+        # random.shuffle(months)
+        for i in range(1, 13):
+            if task_count == 10:
+                task_count = 0
+                print("Time out to avoid request limit...")
+                time.sleep(60)
+            with requests.get('https://api.nytimes.com/svc/archive/v1/'+str(year)+'/'+str(i)+'.json?api-key='+api_key, headers=headers) as file:
                 data = file.json()
+                task_count += 1
                 # task_count += 1
                 try:
                     # Only take the documents parts of the data
@@ -79,46 +90,53 @@ def main(args):
                     # Subsampling the dataset for inspection
                     # articles_sub = articles[:2]
                     for article in articles:
-                        article_out = {}
-                        article_out["headline"] = preproc(article["headline"]["main"])
-                        # TODO: Notice not all years have the same json file structure.
-                        # Pending: What's our solution to these two sections?
-                        # try:
-                        #     article_out["headline"]["print_headline"] = article["headline"]["print_headline"]
-                        #     article_out["headline"]["sub"] = article["headline"]["sub"]
-                        # except KeyError:
-                        #     print('Older news having different format, /'+str(year)+'/'+str(months[i]))
-                        article_out["keywords"] = article["keywords"]
-                        # Add the topics to a list to be recorded in another json file
-                        for item in article["keywords"]:
-                            if item["name"] == "subject" and item["value"] not in topicOutput:
-                                topicOutput.append(item["value"])
-                        article_out["pub_date"] = article["pub_date"]
-                        article_out["news_desk"] = article["news_desk"]
-                        article_out["section_name"] = article["section_name"]
-                        yearOutput.append(article_out)
+                        article_count += 1
+                        # Check if
+                        tech_check = False
+                        if article["keywords"] != []:
+                            for item in article["keywords"]:
+                                if item["name"] == "subject":
+                                    if item["value"] not in tech_topics:
+                                        tech_check = False
+                                    else:
+                                        tech_check = True
+                            # if item["name"] == "subject" and item["value"] not in topicOutput:
+                                # topicOutput.append(item["value"])
+                        # If this article only has topics as recorded
+                        if tech_check:
+                            tech_article_count += 1
+                            year_article_count += 1
+                            article_out = {}
+                            article_out["headline"] = preproc(article["headline"]["main"])
+                            article_out["keywords"] = article["keywords"]
+                            article_out["pub_date"] = article["pub_date"]
+                            yearOutput.append(article_out)
 
                     finished = True
-                    print(str(year)+'/'+str(months[i])+" extracted")
+                    print(str(year)+'/'+str(i)+" extracted")
                 except KeyError:
-                    print('Error: File extraction error, /'+str(year)+'/'+str(months[i])+'; \n' + str(data['fault']))
+                    print('Error: File extraction error, /'+str(year)+'/'+str(i)+'.')
 
             # Check for task count to do timeout to avoid request limit
             # if task_count == 10:
                 # print("Avoid exceeding request limit, sleep for 50s ...")
                 # time.sleep(50)
                 # task_count = 0
+        years_count_Output.append(year_article_count)
         allOutput.append(yearOutput)
     print("File extracted from URL...")
 
     if finished:
-        # Create the new output topic json file
-        t_out = open(args.output_t, 'w')
-        t_out.write(json.dumps(topicOutput))
-        t_out.close()
-        print("Topic JSON file created...")
+        # Record the article counts by year
+        y_out = open(args.output_y, 'w')
+        y_out.write(json.dumps(years_count_Output))
+        y_out.close()
+        print("Year article counts recorded in JSON file...")
         # Create the new output data json file
-        f_out = open(args.output_d, 'w')
+        print('Number of years requested: '+str(len(allOutput)))
+        print('Number of articles in total: '+str(article_count))
+        print('Number of technology section articles in total: '+str(tech_article_count))
+        f_out = open(args.output_o, 'w')
         f_out.write(json.dumps(allOutput))
         f_out.close()
         print("Data JSON file created...")
@@ -127,9 +145,13 @@ def main(args):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Process each .')
-    parser.add_argument("-o", "--output_d", help="Directs the output to a \
+    parser.add_argument("-i", "--input", help="the input json file containing \
+    headlines", required=True)
+    # parser.add_argument("-o", "--output_d", help="Directs the output to a \
+    # filename of your choice", required=True)
+    parser.add_argument("-y", "--output_y", help="Directs the outputed topics to a \
     filename of your choice", required=True)
-    parser.add_argument("-t", "--output_t", help="Directs the outputed topics to a \
+    parser.add_argument("-o", "--output_o", help="Directs the outputed topics to a \
     filename of your choice", required=True)
     args = parser.parse_args()
 
