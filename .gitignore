@@ -52,3 +52,18 @@ out_1900s.json
 tech_topics.json
 topics_2018.json
 year_count.json
+all_articles_check.json
+filtered_out.json
+generated_words.csv
+generated_words.json
+keywords.json
+test.csv
+test.json
+word_freq_trend.json
+
+# Useless Python files #
+######################
+all_article_check.py
+change_point_detection.py
+filter_articles.py
+keywords_generation.py
