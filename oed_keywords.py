@@ -11,6 +11,7 @@ for word in allWords:
 	w_soup = BeautifulSoup(str(word), 'html.parser')
 	if ("n." in w_soup.get_text()):
 		print(w_soup.get_text())
+	print("hello")
 	#if (lemma):
 		#l_soup = BeautifulSoup(str(lemma[0]), 'html.parser')
 		#print(l_soup.span.string)
