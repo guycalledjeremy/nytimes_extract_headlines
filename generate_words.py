@@ -49,16 +49,28 @@ def get_sig_words(data_dict, freq_diff):
 
     # Only take the top 20 for eyeballing
     filtered_output = {}
-    desired_num = 20
+    desired_num = 10
     count_list = list(all_data_dict.keys())
     count_list.sort(reverse=True)
     # TODO
-    print(all_data_dict[count_list[0]])
-    print(len(all_data_dict[count_list[0]]))
+    print(all_data_dict[count_list[-1]])
+    print(len(all_data_dict[count_list[-1]]))
     print(count_list)
-    for count_num in count_list:
+    #for count_num in count_list:
+    #    if desired_num > 0:
+    #        for word in all_data_dict[count_num]:
+    #            if desired_num > 0:
+    #                filtered_output[word] = data_dict[word]
+    #                desired_num -= 1
+    #            else:
+    #                break
+    #    else:
+    #        break
+
+    # TODO
+    for i in range(len(count_list)):
         if desired_num > 0:
-            for word in all_data_dict[count_num]:
+            for word in all_data_dict[count_list[(i+1)*-1]]:
                 if desired_num > 0:
                     filtered_output[word] = data_dict[word]
                     desired_num -= 1
@@ -75,12 +87,26 @@ def main(args):
     """
     # Load the extracted data from the input file
     data = json.load(open(args.input))
+    all_words = list(data.keys())
     print("Data extracted...")
 
-    freq_diff_dict = get_freq_diff(data)
+    oed_words_filepath = "oed_keywords.json"
+    oed_words_dict = json.load(open(oed_words_filepath))
+    oed_words_list = list(oed_words_dict.keys())
+    selected_words_list = []
+    selected_data = {}
+    for original_word in oed_words_list:
+        word = original_word.lower()
+        if word in all_words:
+            selected_words_list.append(word)
+            selected_data[word] = data[word]
+    print("Total number of words extracted from OED: "+str(len(oed_words_list)))
+    print("Total number of words selected: "+str(len(selected_words_list)))
+
+    freq_diff_dict = get_freq_diff(selected_data)
     print("Normalised frequency difference obtained...")
 
-    allOutput = get_sig_words(data, freq_diff_dict)
+    allOutput = get_sig_words(selected_data, freq_diff_dict)
     print("Selected "+str(len(allOutput.keys()))+" words.")
 
     f_out = open(args.output_o, 'w')
