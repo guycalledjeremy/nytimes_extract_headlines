@@ -12,7 +12,7 @@ def cpd(freq_count):
     years = np.arange(0, 100, 1)
     mse = []
     for i in years:
-        fit = np.polyfit(years[i:], freq_count[i:], 2)
+        fit = np.polyfit(years[i:], freq_count[i:], 1)
         linefit = np.poly1d(fit)
         y_fit = np.zeros(i)
         y_fit = np.concatenate((y_fit, linefit(years[i:])), axis=0)
