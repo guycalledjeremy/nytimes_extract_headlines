@@ -9,36 +9,42 @@ def main(args):
     allOutput = []
     for i in range(10):
         allOutput.append([])
-    data = json.load(open("cpd_data.json"))
-    year_1900 = data[0]
+    data_words = json.load(open("cpd_data.json"))
+    data_oed = json.load(open("oed_keywords.json"))
+    cleaned_oed = {}
+    for word in data_oed.keys():
+        cleaned_oed[word.lower()] = data_oed[word]
+    year_1900 = data_words[0]
     for word_data in year_1900:
         word = list(word_data.keys())[0]
-        year = word_data[word][0]
-        if 1900 <= year <= 1909:
-            allOutput[0].append(word)
-        elif 1910 <= year <= 1919:
-            allOutput[1].append(word)
-        elif 1920 <= year <= 1929:
-            allOutput[2].append(word)
-        elif 1930 <= year <= 1939:
-            allOutput[3].append(word)
-        elif 1940 <= year <= 1949:
-            allOutput[4].append(word)
-        elif 1950 <= year <= 1959:
-            allOutput[5].append(word)
-        elif 1960 <= year <= 1969:
-            allOutput[6].append(word)
-        elif 1970 <= year <= 1979:
-            allOutput[7].append(word)
-        elif 1980 <= year <= 1989:
-            allOutput[8].append(word)
-        elif 1990 <= year <= 1999:
-            allOutput[9].append(word)
-        else:
-            print("Error: invalid year; word "+word+", year"+str(year))
-
-    for year in allOutput:
-        print(str(year)+": "+str(len(year)))
+        years = cleaned_oed[word]
+        for year_str in years:
+            try:
+                year = int(year_str)
+                if 1900 <= year <= 1909:
+                    allOutput[0].append(word)
+                elif 1910 <= year <= 1919:
+                    allOutput[1].append(word)
+                elif 1920 <= year <= 1929:
+                    allOutput[2].append(word)
+                elif 1930 <= year <= 1939:
+                    allOutput[3].append(word)
+                elif 1940 <= year <= 1949:
+                    allOutput[4].append(word)
+                elif 1950 <= year <= 1959:
+                    allOutput[5].append(word)
+                elif 1960 <= year <= 1969:
+                    allOutput[6].append(word)
+                elif 1970 <= year <= 1979:
+                    allOutput[7].append(word)
+                elif 1980 <= year <= 1989:
+                    allOutput[8].append(word)
+                elif 1990 <= year <= 1999:
+                    allOutput[9].append(word)
+                else:
+                    print("Error: invalid year; word "+word+", year"+str(year))
+            except ValueError:
+                print("Strange key cannot be converted into int; word, "+word)
 
     # Get the CSV file
     allOutput_csv = [["year", "Data"]]
