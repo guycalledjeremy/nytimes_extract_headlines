@@ -63,6 +63,7 @@ word_freq_trend.json
 oed_keywords.json
 cpd_data.json
 cpd_data.csv
+debug_data.csv
 
 # Useless Python files #
 ######################
